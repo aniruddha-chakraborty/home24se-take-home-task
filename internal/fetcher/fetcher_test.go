@@ -3,7 +3,6 @@ package fetcher
 import (
 	"errors"
 	"io"
-	"net"
 	"net/http"
 	"net/url"
 	"strings"
@@ -175,7 +174,7 @@ func TestFetchTransportError(t *testing.T) {
 			return nil, &url.Error{
 				Op:  "Get",
 				URL: "https://example.com",
-				Err: &net.DNSError{Err: "no such host", Name: "example.com"},
+				Err: errors.New("no such host"),
 			}
 		}),
 	})
@@ -185,13 +184,8 @@ func TestFetchTransportError(t *testing.T) {
 		t.Fatal("Fetch() error = nil, want transport error")
 	}
 
-	var fetchErr *Error
-	if !errors.As(err, &fetchErr) {
-		t.Fatalf("error = %T, want *fetcher.Error", err)
-	}
-
-	if fetchErr.Description != "could not find that website" {
-		t.Fatalf("Description = %q, want %q", fetchErr.Description, "could not find that website")
+	if !strings.Contains(err.Error(), "failed to fetch URL") {
+		t.Fatalf("error = %q, want wrapped fetch error", err.Error())
 	}
 }
 
@@ -237,13 +231,8 @@ func TestFetchRejectsInvalidURL(t *testing.T) {
 		t.Fatal("Fetch() error = nil, want invalid URL error")
 	}
 
-	var fetchErr *Error
-	if !errors.As(err, &fetchErr) {
-		t.Fatalf("error = %T, want *fetcher.Error", err)
-	}
-
-	if fetchErr.Description != "the URL format is invalid" {
-		t.Fatalf("Description = %q, want %q", fetchErr.Description, "the URL format is invalid")
+	if !strings.Contains(err.Error(), "the URL format is invalid") {
+		t.Fatalf("error = %q, want invalid URL message", err.Error())
 	}
 }
 

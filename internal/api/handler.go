@@ -2,8 +2,8 @@ package api
 
 import (
 	"encoding/json"
-	"errors"
 	"net/http"
+	"strings"
 
 	"home24se-take-home/internal/fetcher"
 	"home24se-take-home/internal/model"
@@ -88,15 +88,7 @@ func (h *Handler) Analyze(w http.ResponseWriter, r *http.Request) {
 
 	result, err := h.analyzer.Analyze(req.URL)
 	if err != nil {
-		statusCode := http.StatusBadRequest
-		description := err.Error()
-
-		var fetchErr *fetcher.Error
-		if errors.As(err, &fetchErr) {
-			statusCode = fetchErr.StatusCode
-			description = fetchErr.Description
-		}
-
+		statusCode, description := userFacingError(err)
 		writeJSON(w, statusCode, analyzeResponse{
 			Error: &responseError{
 				Code:        statusCode,
@@ -124,4 +116,22 @@ func writeJSON(w http.ResponseWriter, status int, response analyzeResponse) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(response)
+}
+
+func userFacingError(err error) (int, string) {
+	message := err.Error()
+	lower := strings.ToLower(message)
+
+	switch {
+	case strings.Contains(lower, "please provide a url"):
+		return http.StatusBadRequest, "please provide a URL to analyze"
+	case strings.Contains(lower, "url format is invalid"):
+		return http.StatusBadRequest, "the URL format is invalid"
+	case strings.Contains(lower, "no such host"):
+		return http.StatusBadRequest, "could not find that website"
+	case strings.Contains(lower, "timeout"), strings.Contains(lower, "deadline exceeded"):
+		return http.StatusGatewayTimeout, "the website took too long to respond"
+	default:
+		return http.StatusBadRequest, "failed to fetch the webpage"
+	}
 }

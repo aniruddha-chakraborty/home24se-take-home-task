@@ -79,7 +79,8 @@ TestAnalyzeRejectsInvalidMethod verifies that only POST requests are accepted.
 func TestAnalyzeRejectsInvalidMethod(t *testing.T) {
 	t.Parallel()
 
-	handler := NewHandlerWithService(&analyzerStub{})
+	serviceStub := &analyzerStub{}
+	handler := NewHandlerWithService(serviceStub)
 
 	req := httptest.NewRequest(http.MethodGet, "/api/analyze", nil)
 	rr := httptest.NewRecorder()
@@ -88,6 +89,10 @@ func TestAnalyzeRejectsInvalidMethod(t *testing.T) {
 
 	if rr.Code != http.StatusMethodNotAllowed {
 		t.Fatalf("status = %d, want %d", rr.Code, http.StatusMethodNotAllowed)
+	}
+
+	if serviceStub.calledWith != "" {
+		t.Fatalf("analyzer should not be called, got %q", serviceStub.calledWith)
 	}
 }
 
@@ -98,7 +103,8 @@ cannot be decoded.
 func TestAnalyzeRejectsInvalidJSON(t *testing.T) {
 	t.Parallel()
 
-	handler := NewHandlerWithService(&analyzerStub{})
+	serviceStub := &analyzerStub{}
+	handler := NewHandlerWithService(serviceStub)
 
 	req := httptest.NewRequest(http.MethodPost, "/api/analyze", bytes.NewBufferString(`{"url":`))
 	req.Header.Set("Content-Type", "application/json")
@@ -109,6 +115,10 @@ func TestAnalyzeRejectsInvalidJSON(t *testing.T) {
 	if rr.Code != http.StatusBadRequest {
 		t.Fatalf("status = %d, want %d", rr.Code, http.StatusBadRequest)
 	}
+
+	if serviceStub.calledWith != "" {
+		t.Fatalf("analyzer should not be called, got %q", serviceStub.calledWith)
+	}
 }
 
 /*
@@ -118,7 +128,8 @@ an empty URL.
 func TestAnalyzeRejectsEmptyURL(t *testing.T) {
 	t.Parallel()
 
-	handler := NewHandlerWithService(&analyzerStub{})
+	serviceStub := &analyzerStub{}
+	handler := NewHandlerWithService(serviceStub)
 
 	req := httptest.NewRequest(http.MethodPost, "/api/analyze", bytes.NewBufferString(`{"url":""}`))
 	req.Header.Set("Content-Type", "application/json")
@@ -128,6 +139,10 @@ func TestAnalyzeRejectsEmptyURL(t *testing.T) {
 
 	if rr.Code != http.StatusBadRequest {
 		t.Fatalf("status = %d, want %d", rr.Code, http.StatusBadRequest)
+	}
+
+	if serviceStub.calledWith != "" {
+		t.Fatalf("analyzer should not be called, got %q", serviceStub.calledWith)
 	}
 }
 
@@ -159,6 +174,41 @@ func TestAnalyzeServiceError(t *testing.T) {
 
 	if response.Error == nil {
 		t.Fatal("error response is nil")
+	}
+}
+
+/*
+TestAnalyzeMapsFriendlyFetchError verifies that transport-looking errors are
+turned into cleaner frontend-facing messages.
+*/
+func TestAnalyzeMapsFriendlyFetchError(t *testing.T) {
+	t.Parallel()
+
+	handler := NewHandlerWithService(&analyzerStub{
+		err: errors.New(`fetch webpage: failed to fetch URL: Get "https://example.com": dial tcp: lookup example.com: no such host`),
+	})
+
+	req := httptest.NewRequest(http.MethodPost, "/api/analyze", bytes.NewBufferString(`{"url":"https://example.com"}`))
+	req.Header.Set("Content-Type", "application/json")
+	rr := httptest.NewRecorder()
+
+	handler.Analyze(rr, req)
+
+	if rr.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want %d", rr.Code, http.StatusBadRequest)
+	}
+
+	var response analyzeResponse
+	if err := json.Unmarshal(rr.Body.Bytes(), &response); err != nil {
+		t.Fatalf("json.Unmarshal() error = %v", err)
+	}
+
+	if response.Error == nil {
+		t.Fatal("error response is nil")
+	}
+
+	if response.Error.Description != "could not find that website" {
+		t.Fatalf("Description = %q, want %q", response.Error.Description, "could not find that website")
 	}
 }
 
