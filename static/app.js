@@ -31,7 +31,7 @@ form.addEventListener("submit", async (event) => {
   hideResults();
 
   try {
-    const response = await fetch("/api/analyze", {
+    const response = await fetch("/api/v1/analyze", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

@@ -3,6 +3,8 @@ package api
 import (
 	"encoding/json"
 	"net/http"
+	"regexp"
+	"strconv"
 	"strings"
 
 	"home24se-take-home/internal/fetcher"
@@ -130,6 +132,17 @@ func userFacingError(err error) (int, string) {
 	message := err.Error()
 	lower := strings.ToLower(message)
 
+	if statusCode, ok := extractHTTPStatus(lower); ok {
+		switch statusCode {
+		case http.StatusForbidden:
+			return statusCode, "the website blocked the request"
+		case http.StatusNotFound:
+			return statusCode, "the webpage could not be found"
+		default:
+			return statusCode, http.StatusText(statusCode)
+		}
+	}
+
 	switch {
 	case strings.Contains(lower, "please provide a url"):
 		return http.StatusBadRequest, "please provide a URL to analyze"
@@ -142,4 +155,18 @@ func userFacingError(err error) (int, string) {
 	default:
 		return http.StatusBadRequest, "failed to fetch the webpage"
 	}
+}
+
+func extractHTTPStatus(message string) (int, bool) {
+	matches := regexp.MustCompile(`http status (\d{3})`).FindStringSubmatch(message)
+	if len(matches) != 2 {
+		return 0, false
+	}
+
+	statusCode, err := strconv.Atoi(matches[1])
+	if err != nil {
+		return 0, false
+	}
+
+	return statusCode, true
 }

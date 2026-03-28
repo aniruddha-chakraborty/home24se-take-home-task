@@ -31,6 +31,10 @@ func TestNew(t *testing.T) {
 	if analyzer.parser != parserMock {
 		t.Fatal("New() did not keep provided parser")
 	}
+
+	if analyzer.checker == nil {
+		t.Fatal("New() did not create default link checker")
+	}
 }
 
 /*
@@ -62,7 +66,13 @@ func TestAnalyzeSuccess(t *testing.T) {
 		result: expected,
 	}
 
-	analyzer := New(fetcherMock, parserMock)
+	linkCheckerMock := &linkCheckerStub{
+		accessible: map[string]bool{
+			"https://example.com/about": false,
+		},
+	}
+
+	analyzer := NewWithChecker(fetcherMock, parserMock, linkCheckerMock)
 
 	result, err := analyzer.Analyze("https://example.com")
 	if err != nil {
@@ -90,6 +100,10 @@ func TestAnalyzeSuccess(t *testing.T) {
 	if len(result.InternalLinks) != 1 || len(result.ExternalLinks) != 1 {
 		t.Fatalf("Analyze() links = %#v / %#v", result.InternalLinks, result.ExternalLinks)
 	}
+
+	if result.BrokenLinks != 1 {
+		t.Fatalf("BrokenLinks = %d, want %d", result.BrokenLinks, 1)
+	}
 }
 
 /*
@@ -104,7 +118,7 @@ func TestAnalyzeFetchError(t *testing.T) {
 	}
 	parserMock := &parserStub{}
 
-	analyzer := New(fetcherMock, parserMock)
+	analyzer := NewWithChecker(fetcherMock, parserMock, &linkCheckerStub{})
 
 	_, err := analyzer.Analyze("https://example.com")
 	if err == nil {
@@ -138,7 +152,7 @@ func TestAnalyzeParserError(t *testing.T) {
 		err: errors.New("parse failed"),
 	}
 
-	analyzer := New(fetcherMock, parserMock)
+	analyzer := NewWithChecker(fetcherMock, parserMock, &linkCheckerStub{})
 
 	_, err := analyzer.Analyze("https://example.com")
 	if err == nil {
@@ -147,6 +161,48 @@ func TestAnalyzeParserError(t *testing.T) {
 
 	if !strings.Contains(err.Error(), "parse webpage") {
 		t.Fatalf("error = %q, want wrapped parser error", err.Error())
+	}
+}
+
+/*
+TestAnalyzeCountsOnlyBrokenInternalLinks verifies that the service checks the
+internal links produced by the parser, resolves them against the analyzed URL,
+and increments BrokenLinks only for inaccessible internal targets.
+*/
+func TestAnalyzeCountsOnlyBrokenInternalLinks(t *testing.T) {
+	t.Parallel()
+
+	fetcherMock := &fetcherStub{
+		result: &fetcher.Result{
+			Body:       []byte("<html></html>"),
+			StatusCode: 200,
+			FinalURL:   "https://example.com/root/page",
+		},
+	}
+
+	parserMock := &parserStub{
+		result: model.Result{
+			InternalLinks: []string{"/missing", "relative"},
+			ExternalLinks: []string{"https://golang.org"},
+		},
+	}
+
+	linkCheckerMock := &linkCheckerStub{
+		accessible: map[string]bool{
+			"https://example.com/missing":       false,
+			"https://example.com/root/relative": true,
+		},
+	}
+
+	analyzer := NewWithChecker(fetcherMock, parserMock, linkCheckerMock)
+
+	result, err := analyzer.Analyze("https://example.com")
+	if err != nil {
+		t.Fatalf("Analyze() error = %v", err)
+	}
+
+	if result.BrokenLinks != 1 {
+		t.Fatalf("BrokenLinks = %d, want %d", result.BrokenLinks, 1)
 	}
 }
 
@@ -183,4 +239,12 @@ func (p *parserStub) Parse(documentURL string, htmlContent string) (model.Result
 	}
 
 	return p.result, nil
+}
+
+type linkCheckerStub struct {
+	accessible map[string]bool
+}
+
+func (l *linkCheckerStub) IsAccessible(link string) bool {
+	return l.accessible[link]
 }

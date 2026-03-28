@@ -1,7 +1,7 @@
-UNIT_PACKAGES := $(shell go list ./... | grep -v '/test/integration$$')
+UNIT_PACKAGES := $(shell go list ./... | grep -v '/test/')
 INTEGRATION_PACKAGES := $(shell go list ./... | grep '/test/integration$$')
 
-.PHONY: up down unit sleep integration
+.PHONY: up down run unit sleep integration
 
 up:
 	docker compose up -d
@@ -9,8 +9,11 @@ up:
 down:
 	docker compose down -v
 
+run:
+	go run cmd/server/main.go
+
 unit:
-	go test $(UNIT_PACKAGES)
+	go test $(UNIT_PACKAGES) -v
 	go clean -testcache
 
 sleep:

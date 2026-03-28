@@ -26,7 +26,7 @@ func TestAnalyzeSuccess(t *testing.T) {
 			Headings:      map[string]int{"h1": 1, "h2": 2},
 			InternalLinks: []string{"/a", "/b"},
 			ExternalLinks: []string{"https://golang.org"},
-			BrokenLinks:   0,
+			BrokenLinks:   1,
 			HasLoginForm:  true,
 		},
 	}
@@ -209,6 +209,41 @@ func TestAnalyzeMapsFriendlyFetchError(t *testing.T) {
 
 	if response.Error.Description != "could not find that website" {
 		t.Fatalf("Description = %q, want %q", response.Error.Description, "could not find that website")
+	}
+}
+
+/*
+TestAnalyzeMapsUpstreamHTTPStatus verifies that target-site HTTP failures are
+returned with their upstream status code instead of being parsed as page data.
+*/
+func TestAnalyzeMapsUpstreamHTTPStatus(t *testing.T) {
+	t.Parallel()
+
+	handler := NewHandlerWithService(&analyzerStub{
+		err: errors.New("fetch webpage: target website returned HTTP status 403"),
+	})
+
+	req := httptest.NewRequest(http.MethodPost, "/api/analyze", bytes.NewBufferString(`{"url":"https://example.com"}`))
+	req.Header.Set("Content-Type", "application/json")
+	rr := httptest.NewRecorder()
+
+	handler.Analyze(rr, req)
+
+	if rr.Code != http.StatusForbidden {
+		t.Fatalf("status = %d, want %d", rr.Code, http.StatusForbidden)
+	}
+
+	var response analyzeResponse
+	if err := json.Unmarshal(rr.Body.Bytes(), &response); err != nil {
+		t.Fatalf("json.Unmarshal() error = %v", err)
+	}
+
+	if response.Error == nil {
+		t.Fatal("error response is nil")
+	}
+
+	if response.Error.Description != "the website blocked the request" {
+		t.Fatalf("Description = %q, want %q", response.Error.Description, "the website blocked the request")
 	}
 }
 

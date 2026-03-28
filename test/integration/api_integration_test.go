@@ -104,6 +104,7 @@ func TestIntegrationAnalyzeFixtures(t *testing.T) {
 			title:         "Relative Links",
 			internalLinks: 3,
 			externalLinks: 0,
+			brokenLinks:   0,
 		},
 		{
 			file:          "09_external_links.html",
@@ -118,6 +119,7 @@ func TestIntegrationAnalyzeFixtures(t *testing.T) {
 			title:         "Mixed Links",
 			internalLinks: 2,
 			externalLinks: 2,
+			brokenLinks:   0,
 		},
 		{
 			file:          "11_ignored_links.html",
@@ -164,7 +166,7 @@ func TestIntegrationAnalyzeFixtures(t *testing.T) {
 			title:         "Broken Internal Links",
 			internalLinks: 3,
 			externalLinks: 0,
-			brokenLinks:   0,
+			brokenLinks:   3,
 		},
 		{
 			file:         "18_form_with_multilingual_text.html",
@@ -178,6 +180,7 @@ func TestIntegrationAnalyzeFixtures(t *testing.T) {
 			title:         "Broken Layout",
 			headings:      map[string]int{"h1": 1},
 			internalLinks: 1,
+			brokenLinks:   0,
 		},
 		{
 			file:          "20_complex_page.html",
@@ -186,6 +189,7 @@ func TestIntegrationAnalyzeFixtures(t *testing.T) {
 			headings:      map[string]int{"h1": 1, "h2": 2, "h3": 1},
 			internalLinks: 2,
 			externalLinks: 2,
+			brokenLinks:   0,
 			hasLoginForm:  true,
 		},
 	}
@@ -277,7 +281,7 @@ func analyzeFixture(t *testing.T, baseURL string, fixtureURL string) analyzeResp
 		t.Fatalf("json.Marshal() error = %v", err)
 	}
 
-	req, err := http.NewRequest(http.MethodPost, baseURL+"/api/analyze", bytes.NewReader(body))
+	req, err := http.NewRequest(http.MethodPost, baseURL+"/api/v1/analyze", bytes.NewReader(body))
 	if err != nil {
 		t.Fatalf("http.NewRequest() error = %v", err)
 	}
@@ -285,7 +289,7 @@ func analyzeFixture(t *testing.T, baseURL string, fixtureURL string) analyzeResp
 
 	resp, err := client.Do(req)
 	if err != nil {
-		t.Fatalf("POST /api/analyze failed: %v", err)
+		t.Fatalf("POST /api/v1/analyze failed: %v", err)
 	}
 	defer func() {
 		_ = resp.Body.Close()

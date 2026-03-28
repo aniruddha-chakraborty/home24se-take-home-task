@@ -131,8 +131,8 @@ func TestFetchRedirect(t *testing.T) {
 }
 
 /*
-TestFetchNon2xxStatus verifies that non-success status codes are still returned
-as results rather than being treated as transport errors.
+TestFetchNon2xxStatus verifies that upstream HTTP error responses are surfaced
+as fetch errors instead of being treated as analyzable HTML pages.
 */
 func TestFetchNon2xxStatus(t *testing.T) {
 	t.Parallel()
@@ -148,17 +148,13 @@ func TestFetchNon2xxStatus(t *testing.T) {
 		}),
 	})
 
-	result, err := f.Fetch("https://example.com")
-	if err != nil {
-		t.Fatalf("Fetch() error = %v", err)
+	_, err := f.Fetch("https://example.com")
+	if err == nil {
+		t.Fatal("Fetch() error = nil, want HTTP status error")
 	}
 
-	if result.StatusCode != http.StatusBadGateway {
-		t.Fatalf("StatusCode = %d, want %d", result.StatusCode, http.StatusBadGateway)
-	}
-
-	if !strings.Contains(string(result.Body), "upstream issue") {
-		t.Fatalf("Body = %q, want error response body", string(result.Body))
+	if !strings.Contains(err.Error(), "target website returned HTTP status 502") {
+		t.Fatalf("error = %q, want HTTP status error", err.Error())
 	}
 }
 

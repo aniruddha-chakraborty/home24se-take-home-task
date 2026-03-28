@@ -13,7 +13,7 @@ func main() {
 
 	// API
 	mux.HandleFunc("/health", handler.Health)
-	mux.HandleFunc("/api/analyze", handler.Analyze)
+	mux.HandleFunc("/api/v1/analyze", handler.Analyze)
 
 	// Static files (frontend)
 	fs := http.FileServer(http.Dir("./static"))

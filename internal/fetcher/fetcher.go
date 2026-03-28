@@ -60,6 +60,10 @@ func (f *Fetcher) Fetch(rawURL string) (*Result, error) {
 		return nil, fmt.Errorf("failed to read response body: %w", err)
 	}
 
+	if resp.StatusCode >= http.StatusBadRequest {
+		return nil, fmt.Errorf("target website returned HTTP status %d", resp.StatusCode)
+	}
+
 	return &Result{
 		Body:       body,
 		StatusCode: resp.StatusCode,
