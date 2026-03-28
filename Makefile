@@ -24,4 +24,3 @@ integration:
 	sleep 5
 	ANALYZER_BASE_URL=http://localhost:8080 FIXTURE_BASE_URL=http://web go test $(INTEGRATION_PACKAGES) -v
 	go clean -testcache
-	$(MAKE) down
