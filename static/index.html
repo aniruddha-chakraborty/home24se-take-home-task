@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Webpage Analyzer</title>
+  <link rel="stylesheet" href="./app.css">
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <main class="page">
+    <div class="page-glow page-glow--left" aria-hidden="true"></div>
+    <div class="page-glow page-glow--right" aria-hidden="true"></div>
+
+    <section class="search-stage">
+      <p class="search-stage__label">Webpage analyzer</p>
+      <h1>Inspect any webpage like a search query.</h1>
+      <p class="search-stage__subcopy">
+        Enter a URL, send the request, and review the analysis directly below the search bar.
+      </p>
+
+      <div class="search-stage__chips" aria-hidden="true">
+        <span>HTML version</span>
+        <span>Link graph</span>
+        <span>Heading count</span>
+        <span>Login detection</span>
+      </div>
+
+      <form id="analyze-form" class="search-box" novalidate>
+        <div class="search-box__shell">
+          <div class="search-box__input-wrap">
+            <span class="search-box__icon" aria-hidden="true">Search</span>
+            <input
+              id="url"
+              name="url"
+              type="url"
+              inputmode="url"
+              autocomplete="off"
+              placeholder="https://example.com"
+              required
+            >
+          </div>
+          <button type="submit" id="submit-button">Analyze</button>
+        </div>
+      </form>
+
+      <p class="search-stage__hint">Examples: `example.com`, `https://news.ycombinator.com`, `github.com`</p>
+    </section>
+
+    <section id="feedback" class="feedback" hidden></section>
+
+    <section id="results" class="results" hidden>
+      <header class="results__header">
+        <div>
+          <p class="results__eyebrow">Analysis result</p>
+          <h2 id="result-url"></h2>
+        </div>
+        <div class="results__stamp">
+          <span>Live parse</span>
+        </div>
+      </header>
+
+      <div class="summary-grid">
+        <article class="summary-card summary-card--primary">
+          <span>HTML version</span>
+          <strong id="html-version"></strong>
+        </article>
+        <article class="summary-card summary-card--wide">
+          <span>Page title</span>
+          <strong id="page-title"></strong>
+        </article>
+        <article class="summary-card">
+          <span>Internal links</span>
+          <strong id="internal-links"></strong>
+        </article>
+        <article class="summary-card">
+          <span>External links</span>
+          <strong id="external-links"></strong>
+        </article>
+        <article class="summary-card">
+          <span>Inaccessible links</span>
+          <strong id="broken-links"></strong>
+        </article>
+        <article class="summary-card">
+          <span>Login form</span>
+          <strong id="login-form"></strong>
+        </article>
+      </div>
+
+      <section class="headings-panel">
+        <div class="headings-panel__title">
+          <p class="results__eyebrow">Heading distribution</p>
+          <h3>Document outline</h3>
+        </div>
+        <div id="headings-grid" class="headings-grid"></div>
+      </section>
+    </section>
+  </main>
+</body>
+</html>
