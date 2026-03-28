@@ -44,6 +44,10 @@ type responseError struct {
 	Description string `json:"description"`
 }
 
+type healthResponse struct {
+	Status string `json:"status"`
+}
+
 func NewHandler() *Handler {
 	return &Handler{
 		analyzer: service.New(fetcher.New(), parser.New()),
@@ -52,6 +56,10 @@ func NewHandler() *Handler {
 
 func NewHandlerWithService(analyzer analyzerService) *Handler {
 	return &Handler{analyzer: analyzer}
+}
+
+func (h *Handler) Health(w http.ResponseWriter, _ *http.Request) {
+	writeJSON(w, http.StatusOK, healthResponse{Status: "ok"})
 }
 
 func (h *Handler) Analyze(w http.ResponseWriter, r *http.Request) {
@@ -112,7 +120,7 @@ func (h *Handler) Analyze(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func writeJSON(w http.ResponseWriter, status int, response analyzeResponse) {
+func writeJSON(w http.ResponseWriter, status int, response any) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(response)

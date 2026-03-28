@@ -1,0 +1,20 @@
+services:
+  web:
+    image: nginx:latest
+    container_name: html_server
+    ports:
+      - "8081:80"
+    volumes:
+      - ./test/html:/usr/share/nginx/html:ro
+
+  analyzer:
+    image: golang:1.25
+    container_name: analyzer_service
+    working_dir: /app
+    command: go run cmd/server/main.go
+    ports:
+      - "8080:8080"
+    volumes:
+      - .:/app
+    depends_on:
+      - web

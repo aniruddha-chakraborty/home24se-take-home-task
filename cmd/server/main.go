@@ -12,6 +12,7 @@ func main() {
 	handler := api.NewHandler()
 
 	// API
+	mux.HandleFunc("/health", handler.Health)
 	mux.HandleFunc("/api/analyze", handler.Analyze)
 
 	// Static files (frontend)
