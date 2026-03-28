@@ -4,6 +4,7 @@ import (
 	"net/url"
 	"regexp"
 	"strings"
+	"sync"
 
 	"github.com/PuerkitoBio/goquery"
 
@@ -24,16 +25,53 @@ func (p *Parser) Parse(documentURL string, htmlContent string) (model.Result, er
 		return model.Result{}, err
 	}
 
-	result := model.Result{
-		HTMLVersion:  detectHTMLVersion(htmlContent),
-		Title:        strings.TrimSpace(doc.Find("title").First().Text()),
-		Headings:     extractHeadings(doc),
-		HasLoginForm: hasLoginForm(doc),
-	}
+	var (
+		htmlVersion   string
+		title         string
+		headings      map[string]int
+		hasLogin      bool
+		internalLinks []string
+		externalLinks []string
+		wg            sync.WaitGroup
+	)
 
-	result.InternalLinks, result.ExternalLinks = extractLinks(doc, documentURL)
+	wg.Add(5)
 
-	return result, nil
+	go func() {
+		defer wg.Done()
+		htmlVersion = detectHTMLVersion(htmlContent)
+	}()
+
+	go func() {
+		defer wg.Done()
+		title = strings.TrimSpace(doc.Find("title").First().Text())
+	}()
+
+	go func() {
+		defer wg.Done()
+		headings = extractHeadings(doc)
+	}()
+
+	go func() {
+		defer wg.Done()
+		hasLogin = hasLoginForm(doc)
+	}()
+
+	go func() {
+		defer wg.Done()
+		internalLinks, externalLinks = extractLinks(doc, documentURL)
+	}()
+
+	wg.Wait()
+
+	return model.Result{
+		HTMLVersion:   htmlVersion,
+		Title:         title,
+		Headings:      headings,
+		InternalLinks: internalLinks,
+		ExternalLinks: externalLinks,
+		HasLoginForm:  hasLogin,
+	}, nil
 }
 
 // detectHTMLVersion inspects the document doctype and maps common values.

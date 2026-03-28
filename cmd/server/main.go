@@ -11,8 +11,8 @@ func main() {
 
 	handler := api.NewHandler()
 
-	// API route
-	mux.HandleFunc("/api/v1/analyze", handler.Analyze)
+	// API
+	mux.HandleFunc("/api/analyze", handler.Analyze)
 
 	// Static files (frontend)
 	fs := http.FileServer(http.Dir("./static"))
