@@ -33,7 +33,7 @@ func TestAnalyzeSuccess(t *testing.T) {
 
 	handler := NewHandlerWithService(serviceStub)
 
-	req := httptest.NewRequest(http.MethodPost, "/api/analyze", bytes.NewBufferString(`{"url":"https://example.com"}`))
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/analyze", bytes.NewBufferString(`{"url":"https://example.com"}`))
 	req.Header.Set("Content-Type", "application/json")
 	rr := httptest.NewRecorder()
 
@@ -82,7 +82,7 @@ func TestAnalyzeRejectsInvalidMethod(t *testing.T) {
 	serviceStub := &analyzerStub{}
 	handler := NewHandlerWithService(serviceStub)
 
-	req := httptest.NewRequest(http.MethodGet, "/api/analyze", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/analyze", nil)
 	rr := httptest.NewRecorder()
 
 	handler.Analyze(rr, req)
@@ -106,7 +106,7 @@ func TestAnalyzeRejectsInvalidJSON(t *testing.T) {
 	serviceStub := &analyzerStub{}
 	handler := NewHandlerWithService(serviceStub)
 
-	req := httptest.NewRequest(http.MethodPost, "/api/analyze", bytes.NewBufferString(`{"url":`))
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/analyze", bytes.NewBufferString(`{"url":`))
 	req.Header.Set("Content-Type", "application/json")
 	rr := httptest.NewRecorder()
 
@@ -131,7 +131,7 @@ func TestAnalyzeRejectsEmptyURL(t *testing.T) {
 	serviceStub := &analyzerStub{}
 	handler := NewHandlerWithService(serviceStub)
 
-	req := httptest.NewRequest(http.MethodPost, "/api/analyze", bytes.NewBufferString(`{"url":""}`))
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/analyze", bytes.NewBufferString(`{"url":""}`))
 	req.Header.Set("Content-Type", "application/json")
 	rr := httptest.NewRecorder()
 
@@ -157,7 +157,7 @@ func TestAnalyzeServiceError(t *testing.T) {
 		err: errors.New("fetch webpage: failed to fetch URL"),
 	})
 
-	req := httptest.NewRequest(http.MethodPost, "/api/analyze", bytes.NewBufferString(`{"url":"https://example.com"}`))
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/analyze", bytes.NewBufferString(`{"url":"https://example.com"}`))
 	req.Header.Set("Content-Type", "application/json")
 	rr := httptest.NewRecorder()
 
@@ -188,7 +188,7 @@ func TestAnalyzeMapsFriendlyFetchError(t *testing.T) {
 		err: errors.New(`fetch webpage: failed to fetch URL: Get "https://example.com": dial tcp: lookup example.com: no such host`),
 	})
 
-	req := httptest.NewRequest(http.MethodPost, "/api/analyze", bytes.NewBufferString(`{"url":"https://example.com"}`))
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/analyze", bytes.NewBufferString(`{"url":"https://example.com"}`))
 	req.Header.Set("Content-Type", "application/json")
 	rr := httptest.NewRecorder()
 
@@ -223,7 +223,7 @@ func TestAnalyzeMapsUpstreamHTTPStatus(t *testing.T) {
 		err: errors.New("fetch webpage: target website returned HTTP status 403"),
 	})
 
-	req := httptest.NewRequest(http.MethodPost, "/api/analyze", bytes.NewBufferString(`{"url":"https://example.com"}`))
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/analyze", bytes.NewBufferString(`{"url":"https://example.com"}`))
 	req.Header.Set("Content-Type", "application/json")
 	rr := httptest.NewRecorder()
 
