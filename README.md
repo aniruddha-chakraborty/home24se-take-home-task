@@ -105,6 +105,13 @@ static/ <- frontend assets
   index.html
   app.css
   app.js
+test/
+  integration/ <- end-to-end API tests
+  html/ <- fixture pages served during integration testing
+Dockerfile <- container image definition
+docker-compose.yml <- local integration environment
+Makefile <- common development and test commands
+README.md <- setup notes, assumptions, and improvements
 ```
 
 ## Possible Improvements
@@ -113,3 +120,11 @@ static/ <- frontend assets
 - Improve login form detection by supporting a broader multilingual keyword set and stronger form-field heuristics.
 - Make blocked or bot-protected websites easier to explain to the user, since some pages may reject non-browser requests even when the URL itself is valid.
 - Respect `robots.txt` rules before analyzing a page, so the crawler behavior is more polite and closer to real-world production expectations.
+
+## Assumptions And Decisions
+
+- HTML parsing is based on the raw server response. The application does not execute JavaScript, so client-rendered pages may produce incomplete results.
+- HTTP `4xx` and `5xx` responses from the target website are treated as fetch failures instead of being analyzed as normal webpage content.
+- I assumed users may enter URLs without a scheme, so inputs such as `example.com` are normalized to `https://example.com`.
+- I treated login form detection as a heuristic problem, since the task does not define exact rules. A password field is used as the strongest signal, and login-related keywords are used as a fallback.
+- Links such as fragment anchors (`#...`), `mailto:`, `tel:`, and `javascript:` are ignored and are not counted as internal or external webpage links.
