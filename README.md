@@ -42,7 +42,7 @@ This runs all Go tests except the integration tests under `test/`.
 ### Run integration tests
 
 ```bash
-make up && make sleep && make integration && make down
+make up && make integration && make down
 
 ```
 
