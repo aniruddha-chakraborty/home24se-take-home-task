@@ -42,7 +42,8 @@ This runs all Go tests except the integration tests under `test/`.
 ### Run integration tests
 
 ```bash
-make integration
+make up && make sleep && make integration && make down
+
 ```
 
 This will:
@@ -68,6 +69,12 @@ and stop them with:
 
 ```bash
 make down
+```
+
+The application starts on:
+
+```text
+http://localhost:8080
 ```
 
 ## Planned Features
